@@ -23,6 +23,24 @@ class _Getch:
 		finally:
 			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 		return ch
+getch = _Getch()
+
+
+def end_game():
+	global fd
+	global old_settings
+	global alive
+	import termios
+	termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+	import os
+	os.system("clear")
+	gotoxy(0, 0)
+	print("Game Ends ! ")
+
+	alive = False
+	import sys
+	sys.exit(0)
 
 def get_rand():
 	import random
@@ -30,6 +48,9 @@ def get_rand():
 
 height = 20
 width = 40
+player = coord(20, 10)
+alive = True
+offset = 2
 
 import threading
 class obstacle_move(threading.Thread):
@@ -40,9 +61,14 @@ class obstacle_move(threading.Thread):
 	def run(self):
 		global height
 		global width
+		global offset
+		print(offset)
 		temp_w = width
-		while temp_w >= 2:
-			offset = 2
+		while temp_w >= 2 and alive:
+			if temp_w == player.x:
+				if player.y not in range(self.pos-1+offset, self.pos+1+offset):
+					end_game()
+					continue
 			if abs(temp_w - width) == 10:
 				o = obstacle_move(get_rand())
 				o.start()	
@@ -62,6 +88,27 @@ class obstacle_move(threading.Thread):
 				print(" ")
 			temp_w -= 2
 
+class player_move(threading.Thread):
+	def __init__(self):
+		threading.Thread.__init__(self)
+
+	def run(self):
+		global player
+		global alive
+		while True and alive:
+			gotoxy(player.x, player.y)
+			print("@")
+			ch = getch()
+			gotoxy(player.x, player.y)
+			print(" ")
+			if ch == 'w':
+				player.y -= 2
+			elif ch == 's':
+				player.y += 2
+			elif ch == 'q':
+				end_game()
+
+
 def draw():
 	for i in range(0, width+2):
 		print('*', end='')
@@ -79,10 +126,14 @@ if __name__ == '__main__':
 	os.system("clear")
 
 	draw()
-
-	gotoxy(20,10)
-	print("@")
 	
 	pos = get_rand()
+
+	global o
+	global p
+
 	o = obstacle_move(pos)
+	p = player_move()
+
 	o.start()
+	p.start()
