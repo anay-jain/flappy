@@ -30,13 +30,15 @@ def end_game():
 	global fd
 	global old_settings
 	global alive
+	global score
+
 	import termios
 	termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 	import os
 	os.system("clear")
 	gotoxy(0, 0)
-	print("Game Ends ! ")
+	print("Game Ends ! You final score is: %d" % (score))
 
 	alive = False
 	import sys
@@ -51,6 +53,12 @@ width = 40
 player = coord(20, 10)
 alive = True
 offset = 2
+score = 0
+
+def update_score():
+	global score
+	gotoxy(60, 10)
+	print("Points: %d" % (score))
 
 import threading
 class obstacle_move(threading.Thread):
@@ -62,13 +70,15 @@ class obstacle_move(threading.Thread):
 		global height
 		global width
 		global offset
-		print(offset)
+		global score
 		temp_w = width
 		while temp_w >= 2 and alive:
 			if temp_w == player.x:
 				if player.y not in range(self.pos-1+offset, self.pos+1+offset):
 					end_game()
 					continue
+				score+=1
+				update_score()
 			if abs(temp_w - width) == 10:
 				o = obstacle_move(get_rand())
 				o.start()	
@@ -102,9 +112,9 @@ class player_move(threading.Thread):
 			gotoxy(player.x, player.y)
 			print(" ")
 			if ch == 'w':
-				player.y -= 2
+				player.y -= 1
 			elif ch == 's':
-				player.y += 2
+				player.y += 1
 			elif ch == 'q':
 				end_game()
 
@@ -131,6 +141,8 @@ if __name__ == '__main__':
 
 	global o
 	global p
+
+	update_score()
 
 	o = obstacle_move(pos)
 	p = player_move()
